@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                String  @id
+  shopifyCustomerId BigInt  @unique
+  firstName         String?
+  lastName          String?
+  email             String?
+  totalSpent        Decimal @db.Decimal(10, 2)
+  ordersCount       Int     @default(0)
+  tenantId          String
+  Tenant            Tenant  @relation(fields: [tenantId], references: [id])
+  Order             Order[]
+
+  @@index([tenantId])
+}
+
+model Order {
+  id             String    @id
+  shopifyOrderId BigInt    @unique
+  orderNumber    Int
+  totalPrice     Decimal   @db.Decimal(10, 2)
+  currency       String
+  tenantId       String
+  customerId     String?
+  createdAt      DateTime
+  Customer       Customer? @relation(fields: [customerId], references: [id])
+  Tenant         Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model Product {
+  id               String   @id
+  shopifyProductId BigInt   @unique
+  title            String
+  bodyHtml         String?
+  vendor           String?
+  productType      String?
+  tenantId         String
+  createdAt        DateTime
+  Tenant           Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model Tenant {
+  id          String     @id
+  shopName    String     @unique
+  accessToken String
+  userId      String
+  lastSync    DateTime?
+  isSyncing   Boolean    @default(false)
+  Customer    Customer[]
+  Order       Order[]
+  Product     Product[]
+  User        User       @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  otp          String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime  @default(now())
+  Tenant       Tenant[]
+}
