@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"tsx src/server.ts\"",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "worker1":"npx tsx src/workers/sync.req.worker.ts",
+    "worker2":"npx tsx src/workers/sync.db.worker.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.2",
+    "@types/pg": "^8.15.6",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11",
+    "prisma": "^6.19.0",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "@sendgrid/mail": "^8.1.6",
+    "@shopify/shopify-api": "^12.2.0",
+    "base32-encode": "^2.0.0",
+    "bullmq": "^5.66.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.3",
+    "totp-generator": "^2.0.0",
+    "tsx": "^4.21.0"
+  }
+}

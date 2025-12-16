@@ -9,3 +9,6 @@ GEMINI.md
 
 
 node_modules/
+dist/
+.next/
+
