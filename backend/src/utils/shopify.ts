@@ -1,7 +1,6 @@
 import '@shopify/shopify-api/adapters/node';
 import { shopifyApi, ApiVersion, Session } from '@shopify/shopify-api';
 
-
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY!,
   apiSecretKey: process.env.SHOPIFY_API_SECRET!,
@@ -11,16 +10,9 @@ const shopify = shopifyApi({
   isEmbeddedApp: false, 
 });
 
-/**
- * Creates a GraphQL client for a specific tenant.
- * 
- * @param shopDomain - The myshopify.com domain of the tenant (e.g., "my-store.myshopify.com")
- * @param accessToken - The permanent access token stored in your database for this tenant
- */
 export const createShopifyClient = (shopDomain: string, accessToken: string) => {
-  // and already have the tokens in our DB.
   if (!shopDomain.includes("myshopify.com")){
-     shopDomain += ".myshopify.com";
+    shopDomain += ".myshopify.com";
   }
   const session = new Session({
     id: `offline_${shopDomain}`, // Standard ID format for offline tokens
@@ -28,11 +20,13 @@ export const createShopifyClient = (shopDomain: string, accessToken: string) => 
     state: 'state',
     isOnline: false, // We use offline tokens for background sync
     accessToken: accessToken,
-    scope: 'read_products,read_orders,read_customers' // The scopes you have access to
+    scope: 'read_products,read_orders,read_customers' // scopes i have access to
   });
 
   const client = new shopify.clients.Graphql({ session });
+  //my shopify app must be involved , cause shopify api wont alow non shopify users to use their apis , through my app , i am able to get other tenants data
   return client;
 };
+
 
 export default shopify;

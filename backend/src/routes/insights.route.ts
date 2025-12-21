@@ -3,7 +3,6 @@ import {combinedInsights,TenantOrders,topCustomers} from "../controllers/insight
 
 const router = Router();
 
-
 router.get('/totals',combinedInsights);
 router.post('/orders-by-date',TenantOrders);
 router.post('/top-customers',topCustomers);
