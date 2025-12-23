@@ -16,6 +16,7 @@ model Customer {
   totalSpent        Decimal @db.Decimal(10, 2)
   ordersCount       Int     @default(0)
   tenantId          String
+  segment           String?
   Tenant            Tenant  @relation(fields: [tenantId], references: [id])
   Order             Order[]
 
@@ -61,6 +62,7 @@ model Tenant {
   Customer    Customer[]
   Order       Order[]
   Product     Product[]
+  insights    Insight[]
   User        User       @relation(fields: [userId], references: [id])
 }
 
@@ -71,4 +73,17 @@ model User {
   otpExpiresAt DateTime?
   createdAt    DateTime  @default(now())
   Tenant       Tenant[]
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  type        String // e.g., "PRODUCT_ASSOCIATION", "CUSTOMER_SEGMENT"
+  title       String // e.g., "Frequently Bought Together"
+  description String
+  data        Json // Store related product IDs, confidence scores, etc.
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
 }

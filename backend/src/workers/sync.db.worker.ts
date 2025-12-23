@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { prisma } from '../db/index.js';
+import { analyticsQueue } from '../utils/redis.queue.js';
 
 const connection = new Redis({ maxRetriesPerRequest: null });
 
@@ -100,6 +101,10 @@ const worker = new Worker(
                 }
             });
             console.log(`[SyncDb] Batch of ${products.length} products synced successfully.`);
+
+            // Trigger the analytics job after products are synced
+            await analyticsQueue.add('generateInsights', { tenantId });
+            console.log(`[SyncDb] Enqueued analytics job for tenant ${tenantId}.`);
         }
 
         else if (job.name === 'processCustomers') {

@@ -124,7 +124,7 @@ export const verify = async (req: Request, res: Response): Promise<void> => {
     const token = jwt.sign(
       { id: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn:"15d"}
+      { expiresIn: "15d" }
     );
 
     // Success
@@ -133,9 +133,9 @@ export const verify = async (req: Request, res: Response): Promise<void> => {
       sameSite: "strict",
     });
 
-    res.status(200).json({ 
-      msg: "Login successful", 
-      user: { id: user.id, email: user.email } 
+    res.status(200).json({
+      msg: "Login successful",
+      user: { id: user.id, email: user.email }
     });
 
   } catch (e) {

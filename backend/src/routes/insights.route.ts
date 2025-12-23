@@ -1,11 +1,8 @@
-import {Router} from "express";
-import {combinedInsights,TenantOrders,topCustomers} from "../controllers/insights.controller.js";
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/totals',combinedInsights);
-router.post('/orders-by-date',TenantOrders);
-router.post('/top-customers',topCustomers);
-
+//router.get('/', authenticateToken, getInsights);
 
 export default router;

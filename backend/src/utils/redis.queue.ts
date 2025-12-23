@@ -31,10 +31,23 @@ const syncDbQueue = new Queue('syncDbQueue', {
   } 
 });
 
+const analyticsQueue = new Queue('analyticsQueue', {
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 10000, // ML jobs can be longer, give more backoff
+    },
+    removeOnComplete: true,
+    removeOnFail: 500
+  }
+});
+
 // async function addJobs() {
 //   await myQueue.add('myJobName', { foo: 'bar' });
 //   await myQueue.add('myJobName', { qux: 'baz' });
 // }
 
 // await addJobs();
-export {syncDbQueue,syncReqQueue};
+export {syncDbQueue, syncReqQueue, analyticsQueue};

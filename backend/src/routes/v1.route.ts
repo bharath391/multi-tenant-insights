@@ -4,25 +4,23 @@ import authRouter from "./auth.route.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import datasyncRouter from "./datasync.route.js";
 import insightsRouter from "./insights.route.js";
-// import shopifyWebhookRouter from "./shopify.webhook.route.js";
+import shopifyWebhookRouter from "./shopify.webhook.route.js";
 import tenantRouter from "./tenants.route.js";
 
-const app = express();
-
+const router = Router();
 // v1 route
-app.use("/auth", authRouter);
+router.use("/auth", authRouter);
 
-app.get("/", (req, res) => {
+router.get("/", (req, res) => {
     res.status(200).json({ msg: "In v1 Route" });
     return;
 });
 
 // Middleware applied to protected routes
-app.use("/sync", authenticateToken, datasyncRouter);
-app.use("/insights", authenticateToken, insightsRouter);
-app.use("/tenants", authenticateToken, tenantRouter);
+router.use("/sync", authenticateToken, datasyncRouter);
+router.use("/insights", authenticateToken, insightsRouter);
+router.use("/tenants", authenticateToken, tenantRouter);
+router.use("/shopify-webhooks", shopifyWebhookRouter);
 
-// Webhooks often need raw bodies or specific handling, but if you want auth:
-// app.use("/webhooks", authenticateToken, shopifyWebhookRouter);
+export default router;
 
-export default app;

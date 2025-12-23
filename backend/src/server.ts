@@ -10,14 +10,16 @@ dotenv.config();
 const app = express();
 
 //middlewares
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(cookieParser());
 app.use(requestLogger);
 //routes
-app.use("/api",v1Router);
-app.get("/", async (req, res) => {
-    res.status(200).json({msg:"Server Up and running"});
-});
+app.use("/api/v1", v1Router);
+
 
 //listening
 app.listen(process.env.PORT, () => {
