@@ -11,12 +11,13 @@ const generateOTP = (): string => {
   return crypto.randomInt(100000, 1000000).toString();
 };
 
+const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
 
     // Validate Email
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!email || !emailPattern.test(email)) {
       res.status(400).json({ msg: "Invalid or missing email" });
       return;
@@ -38,7 +39,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
       res.cookie("token", token, {
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: true,
+        maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
       });
 
       res.status(200).json({
@@ -90,6 +92,12 @@ export const verify = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Validate Email
+    if (!emailPattern.test(email)) {
+      res.status(400).json({ msg: "Invalid or missing email" });
+      return;
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
@@ -130,7 +138,8 @@ export const verify = async (req: Request, res: Response): Promise<void> => {
     // Success
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: true,
+      maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
     });
 
     res.status(200).json({

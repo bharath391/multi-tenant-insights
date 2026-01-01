@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * Executes the customer segmentation Python script.
@@ -10,11 +11,14 @@ import path from 'path';
 export const runCustomerSegmentation = () => {
     console.log('Starting customer segmentation script...');
 
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const backendRoot = path.resolve(__dirname, '..', '..');
+
     // Path to the python executable within the virtual environment
-    const pythonExecutable = path.resolve(process.cwd(), 'python', 'venv', 'bin', 'python');
+    const pythonExecutable = path.resolve(backendRoot, 'python', 'venv', 'bin', 'python');
     
     // Path to the python script
-    const pythonScript = path.resolve(process.cwd(), 'mlModel', 'customer_segmentation.py');
+    const pythonScript = path.resolve(backendRoot, 'mlModel', 'customer_segmentation.py');
 
     const pythonProcess = spawn(pythonExecutable, [pythonScript]);
 
@@ -34,10 +38,6 @@ export const runCustomerSegmentation = () => {
         console.error('Failed to start Python script:', err);
     });
 };
-
-import { fileURLToPath } from 'url';
-
-// ... (existing imports and function)
 
 // If this script is run directly, execute the function.
 // This allows for manual triggering, e.g., `ts-node src/scripts/run_ml_model.ts`

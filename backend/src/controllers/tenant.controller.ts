@@ -1,68 +1,67 @@
 import { prisma } from "../db/index.js";
-import type {Request,Response} from "express";
+import type { Request, Response } from "express";
 import type { AuthRequest } from "../utils/interface.js";
 
 
-const getAllTenants = async (req:AuthRequest,res:Response) => {
-    try{
+const getAllTenants = async (req: AuthRequest, res: Response) => {
+    try {
         //user Id
-        const {id,email} = req.user!;
+        const { id, email } = req.user!;
         //fetch all tenant details from the tenants table 
         const tenants = await prisma.tenant.findMany({
-            where:{
-                userId:id
+            where: {
+                userId: id
             }
         })
         res.status(200).json({
             tenants
         })
-    }catch(e){
+    } catch (e) {
         console.log("Error in  getAllTenants controller ");
-        console.log("Incoming request : ",req);
-        console.log("Error : ",e);
+        console.log("Incoming request : ", req);
+        console.log("Error : ", e);
         res.status(500).json({
-            msg:"Internal Server Error"
+            msg: "Internal Server Error"
         })
     }
 };
-const addTenant = async (req:AuthRequest,res:Response) => {
-    try{
-        const {id,email} = req.user!;
-        const {shopName,accessToken} = req.body;
+const addTenant = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id, email } = req.user!;
+        const { shopName, accessToken } = req.body;
 
-        if(
-            !shopName || 
-            !accessToken || 
-            typeof shopName !== 'string' || 
+        if (
+            !shopName ||
+            !accessToken ||
+            typeof shopName !== 'string' ||
             typeof accessToken !== 'string'
-        ){
-             res.status(400).json({
-                msg:"Invalid input: shopName and accessToken must be non-empty strings"
+        ) {
+            res.status(400).json({
+                msg: "Invalid input: shopName and accessToken must be non-empty strings"
             })
             return;
         }
 
-        //add this tenant to this user Id and also create reverse relation i.e new tenent with this use id along with essential details like shopName , accessToken , and we can fetch cusomters , products and orders later (sync mechanism)
         const tenant = await prisma.tenant.create({
-            data:{
+            data: {
                 shopName,
                 accessToken,
-                userId:id
+                userId: id
             }
         })
 
         res.status(201).json({
-            msg:"Tenant added successfully",
+            msg: "Tenant added successfully",
             tenant
         })
 
-    }catch(e){
+    } catch (e) {
         console.log("Error in  addTenant controller ");
-        console.log("Incoming request : ",req);
-        console.log("Error : ",e);
+        console.log("Incoming request : ", req);
+        console.log("Error : ", e);
         res.status(500).json({
-            msg:"Internal Server Error"
+            msg: "Internal Server Error"
         })
     }
 };
-export {getAllTenants,addTenant};
+export { getAllTenants, addTenant };

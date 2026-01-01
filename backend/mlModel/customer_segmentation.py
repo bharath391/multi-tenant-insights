@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-import psycopg2
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -22,25 +22,22 @@ FROM_EMAIL = "your_verified_sendgrid_email@example.com" # IMPORTANT: Change this
 
 # --- DATABASE OPERATIONS ---
 
-def get_db_connection():
-    """Establishes a connection to the PostgreSQL database."""
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+def get_db_engine():
+    """Establishes a connection to the PostgreSQL database using SQLAlchemy."""
+    return create_engine(DATABASE_URL)
 
-def fetch_data(conn, query):
+def fetch_data(engine, query):
     """Fetches data from the database using a pandas query."""
-    return pd.read_sql_query(query, conn)
+    return pd.read_sql_query(query, engine)
 
-def update_customer_segments(conn, customer_segments):
+def update_customer_segments(engine, customer_segments):
     """Updates the customer table with the new segment."""
-    cursor = conn.cursor()
-    for _, row in customer_segments.iterrows():
-        cursor.execute(
-            "UPDATE \"Customer\" SET segment = %s WHERE id = %s",
-            (row['segment'], row['id'])
-        )
-    conn.commit()
-    cursor.close()
+    with engine.begin() as conn:
+        for _, row in customer_segments.iterrows():
+            conn.execute(
+                text("UPDATE \"Customer\" SET segment = :segment WHERE id = :id"),
+                {"segment": row['segment'], "id": row['id']}
+            )
 
 # --- RFM CALCULATION ---
 
@@ -135,16 +132,16 @@ def send_emails_to_segments(customer_segments, tenant_shop_name):
 
 def main():
     """Main function to run the customer segmentation process."""
-    conn = None
+    engine = None
     try:
-        conn = get_db_connection()
-        tenants = fetch_data(conn, 'SELECT id, "shopName" FROM "Tenant"')
+        engine = get_db_engine()
+        tenants = fetch_data(engine, 'SELECT id, "shopName" FROM "Tenant"')
 
         for _, tenant in tenants.iterrows():
             print(f"--- Processing tenant: {tenant['shopName']} ({tenant['id']}) ---")
             
             orders_query = f"SELECT id, \"customerId\", \"createdAt\", \"totalPrice\" FROM \"Order\" WHERE \"tenantId\" = '{tenant['id']}'"
-            orders = fetch_data(conn, orders_query)
+            orders = fetch_data(engine, orders_query)
             
             if orders.empty:
                 print("No orders found for this tenant. Skipping.")
@@ -154,7 +151,7 @@ def main():
             customer_segments = get_customer_segments(rfm_table)
 
             if customer_segments is not None:
-                update_customer_segments(conn, customer_segments)
+                update_customer_segments(engine, customer_segments)
                 print(f"Successfully segmented {len(customer_segments)} customers.")
                 
                 # In a real implementation, you would fetch customer emails before sending
@@ -164,8 +161,8 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
-        if conn:
-            conn.close()
+        if engine:
+            engine.dispose()
             print("Database connection closed.")
 
 if __name__ == '__main__':
