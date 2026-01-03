@@ -3,8 +3,9 @@ import { prisma } from "../db/index.js";
 import sendMail from "../utils/sendgrid.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { env } from "../utils/env.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key_here";
+const JWT_SECRET = env("JWT_SECRET");
 
 // Helper to generate a 6-digit numeric OTP
 const generateOTP = (): string => {
@@ -70,9 +71,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     // Send Email
-    const sent = await sendMail(email, otp);
+    const subject = "Your Login OTP";
+    const html = `<p>Your OTP for login is: <strong>${otp}</strong></p><p>It expries in 10 minutes.</p>`;
+    const sent = await sendMail(email, subject, html);
 
-    if (sent === 1) {
+    if (sent) {
       res.status(200).json({ msg: "OTP sent successfully. Check your email (and spam)." });
     } else {
       res.status(500).json({ msg: "Failed to send email." });

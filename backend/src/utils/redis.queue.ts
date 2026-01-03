@@ -1,11 +1,10 @@
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
+import { env } from './env.js';
 
-const connection = process.env.REDIS_URL 
-  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null }) 
-  : new Redis({ maxRetriesPerRequest: null });
+const connection = new Redis(env("REDIS_URL"), { maxRetriesPerRequest: null });
 
-const syncReqQueue = new Queue('syncReqQueue', { 
+const syncReqQueue = new Queue('syncReqQueue', {
   connection,
   defaultJobOptions: {
     attempts: 3,
@@ -18,7 +17,7 @@ const syncReqQueue = new Queue('syncReqQueue', {
   }
 });
 
-const syncDbQueue = new Queue('syncDbQueue', { 
+const syncDbQueue = new Queue('syncDbQueue', {
   connection,
   defaultJobOptions: {
     attempts: 5, // More attempts for DB locks
@@ -28,7 +27,7 @@ const syncDbQueue = new Queue('syncDbQueue', {
     },
     removeOnComplete: 100,
     removeOnFail: 5000
-  } 
+  }
 });
 
 const analyticsQueue = new Queue('analyticsQueue', {
@@ -49,5 +48,19 @@ const analyticsQueue = new Queue('analyticsQueue', {
 //   await myQueue.add('myJobName', { qux: 'baz' });
 // }
 
+const mailQueue = new Queue('mailQueue', {
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: 100,
+    removeOnFail: 5000
+  }
+});
+
 // await addJobs();
-export {syncDbQueue, syncReqQueue, analyticsQueue};
+export { syncDbQueue, syncReqQueue, analyticsQueue, mailQueue, connection as redis };
+

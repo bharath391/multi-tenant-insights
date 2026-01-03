@@ -1,8 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { type AuthRequest } from "../utils/interface.js";
+import { env } from "../utils/env.js";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = env("JWT_SECRET");
 
 export const authenticateToken = (
   req: AuthRequest,
@@ -17,9 +18,9 @@ export const authenticateToken = (
   }
 
   try {
-    const user = jwt.verify(token, JWT_SECRET) as {id:string,email:string}; 
-    req.user = user; 
-    
+    const user = jwt.verify(token, JWT_SECRET) as { id: string, email: string };
+    req.user = user;
+
     next();
   } catch (error) {
     res.status(403).json({ msg: "Invalid or Expired token - login again" });

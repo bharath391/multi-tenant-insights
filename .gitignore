@@ -4,10 +4,6 @@
 
 /src/generated/prisma
 
-
-GEMINI.md
-
-
 node_modules/
 dist/
 .next/

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import v1Router from "./routes/v1.route.js";
 import cookieParser from "cookie-parser";
 import requestLogger from "./middleware/request.logger.middleware.js";
+import { env } from "./utils/env.js";
 
 dotenv.config();
 
@@ -23,6 +24,6 @@ app.use("/api/v1", v1Router);
 
 
 //listening
-app.listen(process.env.PORT, () => {
-  console.log("Server listening on port 3000");
+app.listen(env("PORT"), () => {
+  console.log(`Server listening on port ${env("PORT")}`);
 });

@@ -55,10 +55,18 @@ const addTenant = async (req: AuthRequest, res: Response) => {
             tenant
         })
 
-    } catch (e) {
+    } catch (e: any) {
         console.log("Error in  addTenant controller ");
         console.log("Incoming request : ", req);
         console.log("Error : ", e);
+
+        if (e.code === 'P2002') {
+            res.status(409).json({
+                msg: "Tenant with this shop name already exists"
+            });
+            return;
+        }
+
         res.status(500).json({
             msg: "Internal Server Error"
         })

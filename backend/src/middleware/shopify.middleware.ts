@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
+import { env } from "../utils/env.js";
 
 const authenticateShopify = (req: Request, res: Response, next: NextFunction) => {
     const shopifyHmac = req.get("X-Shopify-Hmac-Sha256");
@@ -15,7 +16,7 @@ const authenticateShopify = (req: Request, res: Response, next: NextFunction) =>
     }
 
     const generatedHash = crypto
-        .createHmac("sha256", process.env.SHOPIFY_WEBHOOK_SECRET!)
+        .createHmac("sha256", env("SHOPIFY_WEBHOOK_SECRET"))
         .update(rawBody, "utf8")
         .digest("base64");
 

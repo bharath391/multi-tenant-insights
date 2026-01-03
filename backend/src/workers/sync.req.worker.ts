@@ -5,8 +5,9 @@ import { Redis } from 'ioredis';
 import { createShopifyClient } from '../utils/shopify.js';
 import { syncDbQueue } from '../utils/redis.queue.js';
 import { prisma } from '../db/index.js';
+import { env } from '../utils/env.js';
 
-const connection = new Redis({ maxRetriesPerRequest: null });
+const connection = new Redis(env("REDIS_URL"), { maxRetriesPerRequest: null });
 
 const worker = new Worker(
   'syncReqQueue',
@@ -48,13 +49,15 @@ const worker = new Worker(
           `;
           const response: any = await client.request(query, { variables: { cursor } });
           const orders = response.data.orders.edges.map((edge: any) => edge.node);
-          
+
           if (orders.length > 0) {
-              await syncDbQueue.add('processOrders', { tenantId, orders });
+            await syncDbQueue.add('processOrders', { tenantId, orders });
           }
           hasNextPage = response.data.orders.pageInfo.hasNextPage;
           cursor = response.data.orders.pageInfo.endCursor;
         }
+        // Signal that orders category is done being requested
+        await syncDbQueue.add('categorySynced', { tenantId });
       }
 
       // --- Sync Products ---
@@ -81,18 +84,20 @@ const worker = new Worker(
           const products = response.data.products.edges.map((edge: any) => edge.node);
 
           if (products.length > 0) {
-              await syncDbQueue.add('processProducts', { tenantId, products });
+            await syncDbQueue.add('processProducts', { tenantId, products });
           }
           hasNextPage = response.data.products.pageInfo.hasNextPage;
           cursor = response.data.products.pageInfo.endCursor;
         }
+        // Signal that products category is done being requested
+        await syncDbQueue.add('categorySynced', { tenantId });
       }
 
       // --- Sync Customers ---
       else if (job.name === 'syncCustomers') {
         try {
-            while (hasNextPage) {
-              const query = `
+          while (hasNextPage) {
+            const query = `
                 query getCustomers($cursor: String) {
                   customers(first: 10, after: $cursor) {
                     pageInfo { hasNextPage endCursor }
@@ -109,21 +114,25 @@ const worker = new Worker(
                   }
                 }
               `;
-              const response: any = await client.request(query, { variables: { cursor } });
-              const customers = response.data.customers.edges.map((edge: any) => edge.node);
+            const response: any = await client.request(query, { variables: { cursor } });
+            const customers = response.data.customers.edges.map((edge: any) => edge.node);
 
-              if (customers.length > 0) {
-                  await syncDbQueue.add('processCustomers', { tenantId, customers });
-              }
-              hasNextPage = response.data.customers.pageInfo.hasNextPage;
-              cursor = response.data.customers.pageInfo.endCursor;
+            if (customers.length > 0) {
+              await syncDbQueue.add('processCustomers', { tenantId, customers });
             }
+            hasNextPage = response.data.customers.pageInfo.hasNextPage;
+            cursor = response.data.customers.pageInfo.endCursor;
+          }
         } catch (error: any) {
-             if (error.message && (error.message.includes('access the Customer object') || error.message.includes('GraphqlQueryError'))) {
-                 console.warn(`[SyncReq] Skipping syncCustomers for ${shopName}: PII Access Denied.`);
-                 return; 
-             }
-             throw error;
+          if (error.message && (error.message.includes('access the Customer object') || error.message.includes('GraphqlQueryError'))) {
+            console.warn(`[SyncReq] Skipping syncCustomers for ${shopName}: PII Access Denied. Will still signal category completion.`);
+            // Don't rethrow - we'll still signal completion below
+          } else {
+            throw error; // Rethrow other errors
+          }
+        } finally {
+          // Always signal that customers category is done, even if it failed due to permissions
+          await syncDbQueue.add('categorySynced', { tenantId });
         }
       }
 
@@ -138,30 +147,9 @@ const worker = new Worker(
 
 worker.on('completed', async job => {
   console.log(`[SyncReq] Job ${job.id} completed!`);
-  // Update tenant isSyncing status to false
-  try {
-      const { tenantId } = job.data;
-      await prisma.tenant.update({
-          where: { id: tenantId },
-          data: { isSyncing: false, lastSync: new Date() }
-      });
-  } catch (e) {
-      console.error("Failed to update tenant sync status", e);
-  }
 });
 
 worker.on('failed', async (job, err) => {
   console.log(`[SyncReq] Job ${job?.id} has failed with ${err.message}`);
-    // Update tenant isSyncing status to false on failure too
-    try {
-        if(job?.data?.tenantId){
-            await prisma.tenant.update({
-                where: { id: job.data.tenantId },
-                data: { isSyncing: false }
-            });
-        }
-    } catch (e) {
-        console.error("Failed to update tenant sync status on failure", e);
-    }
 });
 

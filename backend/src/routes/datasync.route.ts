@@ -1,9 +1,8 @@
-import {Router} from "express";
-import { TenantDataSync, testShopifyConnection } from "../controllers/datasync.controller.js"
-const router = Router();
+import { type Router as RouterType, Router } from "express";
+import { TenantDataSync } from "../controllers/datasync.controller.js"
+const router: RouterType = Router();
 
 
-router.get('/shopify/test/:tenantId', testShopifyConnection);
 router.post('/:tenantId', TenantDataSync);
 
 
